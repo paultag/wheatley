@@ -1,12 +1,12 @@
 (require marx.language)
-(import asyncio [lenin.kwzip [group-map keyword? one]])
+(import asyncio [wheatley.kwzip [group-map keyword? one]])
 
 
 (defmacro disown [&rest forms]
   `(.async asyncio ((fn/coroutine [] ~@forms))))
 
 
-(defmacro lenin-debug [&rest forms]
+(defmacro wheatley-debug [&rest forms]
   `(print ~@forms))
 
 
@@ -17,18 +17,18 @@
                        "id" container._id
                        "event" ~event
                        "container" ~container}]]
-      (emit :lenin ~ename)
-      (emit (+ :lenin "-" ~class) ~ename)
-      (emit (+ :lenin "-" ~class "-" ~event) ~ename)
+      (emit :wheatley ~ename)
+      (emit (+ :wheatley "-" ~class) ~ename)
+      (emit (+ :wheatley "-" ~class "-" ~event) ~ename)
 
       (if (is-not ~name nil)
         (do
-          (emit (+ :lenin "-" ~name) ~ename)
-          (emit (+ :lenin "-" ~class "-" ~name) ~ename)
-          (emit (+ :lenin "-" ~class "-" ~name "-" ~event) ~ename))))))
+          (emit (+ :wheatley "-" ~name) ~ename)
+          (emit (+ :wheatley "-" ~class "-" ~name) ~ename)
+          (emit (+ :wheatley "-" ~class "-" ~name "-" ~event) ~ename))))))
 
 
-(defn lenin-run [data]
+(defn wheatley-run [data]
   "Central run code"
   (defn parse-string [input]
       ;; "172.17.42.1:53:53/udp"
@@ -63,7 +63,7 @@
         (go (.start container ~config))))))
 
 
-(defn lenin-depwait [data]
+(defn wheatley-depwait [data]
   (define [[deps (:requires data)]]
     `(go (apply asyncio.gather
       (list-comp
@@ -98,7 +98,7 @@
         [x [~@deps]])))))
 
 
-(defn lenin-create [data]
+(defn wheatley-create [data]
   "Central creation code"
   (defn write-binds [binds]
     (let [[ret `{}]]
@@ -135,8 +135,8 @@
 
 (defmacro job [&rest forms]
   (define [[data (group-map keyword? forms)]
-           [creation-code (lenin-create data)]
-           [run-code (lenin-run data)]]
+           [creation-code (wheatley-create data)]
+           [run-code (wheatley-run data)]]
     ; XXX: Remove `name' if it exists.
 
     `(run-every ~@(:every data)
@@ -158,9 +158,9 @@
 (defmacro daemon [&rest forms]
   (define [[data (group-map keyword? forms)]
            [name (one `nil (:name data))]
-           [depwait-code (lenin-depwait data)]
-           [creation-code (lenin-create data)]
-           [run-code (lenin-run data)]]
+           [depwait-code (wheatley-depwait data)]
+           [creation-code (wheatley-create data)]
+           [run-code (wheatley-run data)]]
     `(disown
       (while true
         ~creation-code
@@ -177,9 +177,9 @@
         (broadcast "daemon" ~name "died" container)))))
 
 
-(defmacro lenin [set-name &rest body]
+(defmacro wheatley [set-name &rest body]
   `(marx
-    (on :lenin (lenin-debug (slice (get event "id") 0 8) ":"
+    (on :wheatley (wheatley-debug (slice (get event "id") 0 8) ":"
                       (get event "class")
                       (get event "name") (get event "event")))
     ~@body))

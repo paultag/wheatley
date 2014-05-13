@@ -3,11 +3,11 @@
 ;;;;
 ;;;;
 
-(require lenin.language)
+(require wheatley.language)
 (import [sh [hostname]])
 
 
-(lenin "core"
+(wheatley "core"
   (let [[host (.strip (str (hostname "-f")))]
         [deployment "dev"]]
     ;;
@@ -32,9 +32,9 @@
                  "-domain" host
                  "-name" "skydns")))
 
-    ; (daemon :name "lenin"
-    ;         :image "paultag/lenin"
+    ; (daemon :name "wheatley"
+    ;         :image "paultag/wheatley"
     ;         :requires "skydock"
     ;         :volumes ["/run/docker.sock" "/run/docker.sock"]
-    ;                  ["/srv/leliel.pault.ag/dev/lenin" "/lenin"]
-    ;         :run "hy" "/lenin/services.hy")))
+    ;                  ["/srv/leliel.pault.ag/dev/wheatley" "/wheatley"]
+    ;         :run "hy" "/wheatley/services.hy")))

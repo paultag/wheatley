@@ -3,10 +3,10 @@
 ;;;;
 ;;;;
 
-(require lenin.language)
+(require wheatley.language)
 
 
-(lenin "services"
+(wheatley "services"
 
   ;;
   ;; MongoDB
@@ -47,6 +47,14 @@
           :volumes ["/srv/leliel.pault.ag/dev/postgres/9.3/main"
                     "/var/lib/postgresql/9.3/main"]
           :run "/usr/local/bin/paultag-psqld")
+
+  ;;
+  ;; Quassel
+  ;;
+  (daemon :name "quassel"
+          :image "paultag/quassel"
+          :volumes ["/srv/leliel.pault.ag/dev/quassel" "/quassel"]
+          :run "/usr/local/bin/paultag-quasselcore")
 
   ;;
   ;; Snitch Daemon Debian

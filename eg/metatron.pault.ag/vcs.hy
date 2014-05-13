@@ -1,7 +1,7 @@
-(require lenin.language)
+(require wheatley.language)
 
 
-(lenin "services"
+(wheatley "services"
 
   ;;
   ;; Sync VCSs

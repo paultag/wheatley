@@ -13,7 +13,7 @@ RUN cd /opt/hylang/aiodocker; python3.4 /usr/bin/pip3 install -e .
 RUN cd /opt/hylang/; git clone git://github.com/paultag/marx.git
 RUN cd /opt/hylang/marx; python3.4 /usr/bin/pip3 install -e .
 
-RUN cd /opt/hylang/; git clone git://github.com/paultag/lenin.git
-RUN cd /opt/hylang/lenin; python3.4 /usr/bin/pip3 install -e .
+RUN cd /opt/hylang/; git clone git://github.com/paultag/wheatley.git
+RUN cd /opt/hylang/wheatley; python3.4 /usr/bin/pip3 install -e .
 
 CMD ["hy"]
