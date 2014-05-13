@@ -179,6 +179,29 @@
 
 (defmacro wheatley [set-name &rest body]
   `(marx
+
+    (print "                .,-:;//;:=,
+            . :H@@@MM@M#H/.,+%;,
+         ,/X+ +M@@M@MM%=,-%HMMM@X/,
+       -+@MM; $M@@MH+-,;XMMMM@MMMM@+-
+      ;@M@@M- XM@X;. -+XXXXXHHH@M@M#@/.
+    ,%MM@@MH ,@%=            .---=-=:=,.           [ WHEATLEY ]
+    =@#@@@MX .,              -%HX$$%%%+;
+   =-./@M@M$                  .;@MMMM@MM:
+   X@/ -$MM/                    .+MM@@@M$
+  ,@M@H: :@:                    . =X#@@@@-  Good news: that is NOT a docking
+  ,@@@MMX, .                    /H- ;@M@M=  station. So there's one mystery
+  .H@@@@M@+,                    %MM+..%#$.  solved. I'm going to attempt a
+   /MMMM@MMH/.                  XM@MH; =;   manual override on this wall.
+    /%+%$XHH@$=              , .H@@@@MX,    Could get a bit technical!
+     .=--------.           -%H.,@@@@@MX,    Hold on!
+     .%MM@@@HHHXX$$$%+- .:$MMX =M@@MM%.
+       =XMMM@MM@MM#H;,-+HMM@M+ /MMMX=
+         =%@M@M#@$-.=$@MM@@@M; %M%=
+           ,:+$+-,/H#MMMMMMM@= =,
+                 =++%%%%+/:-.
+")
+
     (on :wheatley (wheatley-debug (slice (get event "id") 0 8) ":"
                       (get event "class")
                       (get event "name") (get event "event")))
