@@ -18,7 +18,6 @@
   (go (apply asyncio.gather
     (list-comp
       ((fn/coroutine [name]
-
         (setv running false)
         (try (do (setv container (go (.get docker.containers name)))
                  (setv running (-> (. container _container)
@@ -42,5 +41,4 @@
 
 (defn/coroutine wheatley-launch [docker name dependencies config]
   (go (wheatley-depwait docker dependencies))
-
-)
+  (go (.create-or-replace docker.containers name config)))
