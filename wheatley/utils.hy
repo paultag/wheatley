@@ -33,8 +33,14 @@
                       (if (= (.lstrip (get container "Name") "/") name)
                       (do (print (% " => dep %s debounce" name))
                           ;; XXX: Better checking here.
-                          (go (.sleep asyncio 1))
-                          ;; XXX: Better checking here.
+                          (go (.sleep asyncio 2))
+
+                          (try
+                            (setv container (go (.show (get it "container"))))
+                          (except [ValueError]
+                            (print (% " => dep %s went down" name))
+                            (continue)))
+
                           (print (% " => dep %s unblocked" name))
                           (break))))))))) x) [x dependencies]))))
 
