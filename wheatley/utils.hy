@@ -45,6 +45,8 @@
                           (break))))))))) x) [x dependencies]))))
 
 
-(defn/coroutine wheatley-launch [docker name dependencies config]
+(defn/coroutine wheatley-launch [docker name dependencies create-config run-config]
   (go (wheatley-depwait docker dependencies))
-  (go (.create-or-replace docker.containers name config)))
+  (setv container (go (.create-or-replace docker.containers name create-config)))
+  (setv instance (go (.start container run-config)))
+  (raise (StopIteration instance)))
