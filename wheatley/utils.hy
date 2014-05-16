@@ -33,6 +33,54 @@
     (defaultdict list)))
 
 
+(defn wheatley-create-container-config [mapping]
+  (let [[dmap (group-map keyword? mapping)]
+        [name (one nil (:name dmap))]
+        [env (list-comp (.join "=" x) [x (:env dmap)])]
+        [image (one "debian:stable" (:image dmap))]
+        [volumes (dict-comp v {} [(, k v) (:volumes dmap)])]
+
+        [ports ((fn [mappings]
+                  (setv ret {})
+                  (for [mapping mappings]
+                    (setv (, ip, _, v) (.split mapping ":"))
+                    (assoc ret v {}))
+                  ret) (:port-mapping dmap))]
+
+        [config {"Cmd" (:run dmap)
+                 "Image" image
+                 "Env" env
+                 "AttachStdin" false
+                 "AttachStdout" true
+                 "AttachStderr" true
+                 "ExposedPorts" ports
+                 "Volumes" volumes
+                 "Tty" false
+                 "OpenStdin" false
+                 "StdinOnce" false}]]
+      config))
+
+(defn wheatley-create-run-config [mapping]
+  (let [[dmap (group-map keyword? mapping)]
+        [name (one nil (:name dmap))]
+        [privileged (one false (:privileged dmap))]
+        [binds (list-comp (.join ":" x) [x (:volumes dmap)])]
+        [links (list-comp (.join ":" x) [x (:links dmap)])]
+        [ports ((fn [mappings]
+                 (setv ret {})
+                 (for [mapping mappings]
+                   (setv (, ip cport hport)
+                         (.split mapping ":" 2))
+                   (assoc ret hport [{"HostIp" ip
+                                      "HostPort" cport}]))
+                 (if (= ret {}) nil ret)) (:port-mapping dmap))]
+        [config {"Binds" binds
+                 "Privileged" privileged
+                 "PortBindings" ports
+                 "Links" links}]]
+    config))
+
+
 (eval-when-compile
   ;;; helper for wheatley-depwait
   (defmacro/g! ap-events [&rest body]
