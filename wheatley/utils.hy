@@ -9,6 +9,7 @@
 
 
 (defn one [default args]
+  "Get a single element back from the keyvector"
   (cond
     [(= (len args) 0) default]
     [(= (len args) 1) (get args 0)]
@@ -16,6 +17,7 @@
 
 
 (defn key-value-stream [key? stream]
+  "Stream the key-value pairs back"
   (let [[key nil]]
     (for [x stream]
       (if (key? x)
@@ -24,6 +26,7 @@
 
 
 (defn group-map [key? stream]
+  "Create a defaultdict from a keyvector"
   (reduce
     (fn [accum v]
       (let [[(, key value) v]]
@@ -34,6 +37,7 @@
 
 
 (defn wheatley-create-container-config [mapping]
+  "Create a Docker config from a keyvector defaultdict"
   (let [[dmap (group-map keyword? mapping)]
         [name (one nil (:name dmap))]
         [env (list-comp (.join "=" x) [x (:env dmap)])]
@@ -61,6 +65,7 @@
       config))
 
 (defn wheatley-create-run-config [mapping]
+  "Create a Docker run config from a keyvector defaultdict"
   (let [[dmap (group-map keyword? mapping)]
         [name (one nil (:name dmap))]
         [privileged (one false (:privileged dmap))]
@@ -91,6 +96,7 @@
 
 
 (defn/coroutine wheatley-depwait [docker dependencies]
+  "Depedency-wait code"
   (go (apply asyncio.gather
     (list-comp
       ((fn/coroutine [name]
@@ -122,7 +128,23 @@
 
 
 (defn/coroutine wheatley-launch [docker name dependencies create-config run-config]
+  "Launch a container with raw options"
   (go (wheatley-depwait docker dependencies))
   (setv container (go (.create-or-replace docker.containers name create-config)))
   (go (.start container run-config))
   (raise (StopIteration container)))
+
+
+(defn/coroutine wheatley-simple-launch [docker config]
+  "Launch a container with keyvector options"
+  (setv dmap (group-map keyword? config))
+  (setv name (one nil (:name dmap)))
+  (if (is name nil) (raise (TypeError "No name supplied.")))
+  (setv instance
+    (go (wheatley-launch
+          docker
+          name
+          (:requires dmap)
+          (wheatley-create-container-config config)
+          (wheatley-create-run-config config))))
+  (raise (StopIteration instance)))
