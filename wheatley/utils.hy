@@ -1,7 +1,3 @@
-;;;;;
-;;;;;
-;;;;;
-
 (require acid.language)
 (import [collections [defaultdict]]
         [functools [reduce]]
