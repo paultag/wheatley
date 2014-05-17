@@ -11,15 +11,18 @@
 
 
 (defmacro daemon [&rest args]
-  `(do (import wheatley.utils)
-       (go (wheatley.utils.wheatley-daemon docker [~@args]))))
+  `(do (disown
+       (import wheatley.utils)
+       (go (wheatley.utils.wheatley-daemon docker [~@args])))))
 
 
 (defmacro job [&rest args]
   (setv every (:every (wheatley.utils.group-map keyword? args)))
   `(run-every ~@every
     (disown (import wheatley.utils)
-            (go (wheatley.utils.wheatley-job docker [~@args])))))
+            (try
+              (go (wheatley.utils.wheatley-job docker [~@args]))
+            (catch [ValueError])))))
 
 
 (defmacro wheatley [&rest forms]
