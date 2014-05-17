@@ -20,9 +20,7 @@
   (setv every (:every (wheatley.utils.group-map keyword? args)))
   `(run-every ~@every
     (disown (import wheatley.utils)
-            (try
-              (go (wheatley.utils.wheatley-job docker [~@args]))
-            (catch [ValueError])))))
+            (go (wheatley.utils.wheatley-job docker [~@args])))))
 
 
 (defmacro wheatley [&rest forms]

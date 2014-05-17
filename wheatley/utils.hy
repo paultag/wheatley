@@ -50,7 +50,11 @@
 
   (while true
     (debug "Launching instance.")
-    (setv instance (go (wheatley-simple-launch docker keyvector)))
+    (try
+      (setv instance (go (wheatley-simple-launch docker keyvector)))
+    (except [e ValueError]
+      (debug (.format "aborting daemon launch due to `{}`" (str e)))
+      (raise (StopIteration))))
     (go (.wait instance))
     (debug (.format "Crap, instance fell down. Sleeping {} secs"
                     (str (* 2 failure))))
@@ -64,7 +68,11 @@
 (defn/coroutine wheatley-job [docker keyvector]
   (setv debug (get-debugger "job" keyvector))
   (debug "Job created")
-  (setv instance (go (wheatley-simple-launch docker keyvector false)))
+  (try
+    (setv instance (go (wheatley-simple-launch docker keyvector false)))
+  (except [e ValueError]
+    (debug (.format "aborting launch due to `{}`" (str e)))
+    (raise (StopIteration))))
   (go (.wait instance))
   (setv data (go (.show instance)))
   (if (= (-> data (get "State") (get "ExitCode")) 0)
