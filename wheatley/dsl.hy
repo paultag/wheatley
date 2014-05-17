@@ -2,11 +2,24 @@
 ;;;;;
 ;;;;;
 (require marx.language)
+(import wheatley.utils)
 
 
 (defmacro wheatley-spawn [&rest args]
   `(do (import wheatley.utils)
        (go (wheatley.utils.wheatley-simple-launch docker [~@args]))))
+
+
+(defmacro daemon [&rest args]
+  `(do (import wheatley.utils)
+       (go (wheatley.utils.wheatley-daemon docker [~@args]))))
+
+
+(defmacro job [&rest args]
+  (setv every (:every (wheatley.utils.group-map keyword? args)))
+  `(run-every ~@every
+    (disown (import wheatley.utils)
+            (go (wheatley.utils.wheatley-job docker [~@args])))))
 
 
 (defmacro wheatley [&rest forms]

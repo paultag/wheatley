@@ -1,7 +1,5 @@
 (require acid.language)
-(import [collections [defaultdict]]
-        [functools [reduce]]
-        asyncio)
+(import [collections [defaultdict]] [functools [partial reduce]] asyncio)
 
 
 (defn one [default args]
@@ -30,6 +28,53 @@
       accum)
     (key-value-stream key? stream)
     (defaultdict list)))
+
+
+(defn wheatley-debug [container tag msg]
+  (print (.format "{}/{}: {}" container tag msg)))
+
+
+(defn get-name [keyvector]
+  (setv name (one nil (:name (group-map keyword? keyvector)))))
+
+
+(defn get-debugger [type keyvector]
+  (setv name (get-name keyvector))
+  (partial wheatley-debug name type))
+
+
+(defn/coroutine wheatley-daemon [docker keyvector]
+  (setv failure 0)
+  (setv debug (get-debugger "daemon" keyvector))
+  (debug "Starting bringup routines.")
+
+  (while true
+    (debug "Launching instance.")
+    (setv instance (go (wheatley-simple-launch docker keyvector)))
+    (go (.wait instance))
+    (debug (.format "Crap, instance fell down. Sleeping {} secs"
+                    (str (* 2 failure))))
+    (go (asyncio.sleep (* 2 failure)))
+    (setv failure (+ failure 1))
+    (if (> failure 4)
+      (do (debug "Too many failures. I'm out. Screw this.")
+          (break)))))
+
+
+(defn/coroutine wheatley-job [docker keyvector]
+  (setv debug (get-debugger "job" keyvector))
+  (debug "Job created")
+  ;
+  ;
+  ; XXX: Fail rather than depwait.
+  (setv instance (go (wheatley-simple-launch docker keyvector)))
+  ;
+  ;
+  (go (.wait instance))
+  (setv data (go (.show instance)))
+  (if (= (-> data (get "State") (get "ExitCode")) 0)
+    (debug "Job ran nicely")
+    (debug "Job failed")))
 
 
 (defn wheatley-create-container-config [mapping]
@@ -91,8 +136,10 @@
            ~@body))))
 
 
-(defn/coroutine wheatley-depwait [docker dependencies]
+(defn/coroutine wheatley-depwait [docker name dependencies]
   "Depedency-wait code"
+  (setv debug (partial wheatley-debug name "dependencies"))
+
   (go (apply asyncio.gather
     (list-comp
       ((fn/coroutine [name]
@@ -104,30 +151,34 @@
         (except [ValueError]))
 
         (if (not running)
-          (do (print (% " => dep %s not running. waiting..." name))
+          (do (debug (% "dep %s not running. waiting..." name))
               (ap-events
                 (if (= (.get it "status") "start")
                   (do (setv container (go (.show (get it "container"))))
                       (if (= (.lstrip (get container "Name") "/") name)
-                      (do (print (% " => dep %s debounce" name))
+                      (do (debug (% "dep %s debounce" name))
                           ;; XXX: Better checking here.
                           (go (.sleep asyncio 2))
 
                           (try
                             (setv container (go (.show (get it "container"))))
                           (except [ValueError]
-                            (print (% " => dep %s went down" name))
+                            (debug (% "dep %s went down" name))
                             (continue)))
 
-                          (print (% " => dep %s unblocked" name))
+                          (debug (% "dep %s unblocked." name))
                           (break))))))))) x) [x dependencies]))))
 
 
 (defn/coroutine wheatley-launch [docker name dependencies create-config run-config]
   "Launch a container with raw options"
-  (go (wheatley-depwait docker dependencies))
+  (setv debug (partial wheatley-debug name "launcher"))
+
+  (go (wheatley-depwait docker name dependencies))
+  (debug "depwait complete.")
   (setv container (go (.create-or-replace docker.containers name create-config)))
   (go (.start container run-config))
+  (debug "container started.")
   (raise (StopIteration container)))
 
 
