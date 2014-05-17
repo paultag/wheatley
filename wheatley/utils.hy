@@ -64,12 +64,7 @@
 (defn/coroutine wheatley-job [docker keyvector]
   (setv debug (get-debugger "job" keyvector))
   (debug "Job created")
-  ;
-  ;
-  ; XXX: Fail rather than depwait.
-  (setv instance (go (wheatley-simple-launch docker keyvector)))
-  ;
-  ;
+  (setv instance (go (wheatley-simple-launch docker keyvector false)))
   (go (.wait instance))
   (setv data (go (.show instance)))
   (if (= (-> data (get "State") (get "ExitCode")) 0)
@@ -136,7 +131,7 @@
            ~@body))))
 
 
-(defn/coroutine wheatley-depwait [docker name dependencies]
+(defn/coroutine wheatley-depwait [docker name dependencies &optional depwait]
   "Depedency-wait code"
   (setv debug (partial wheatley-debug name "dependencies"))
 
@@ -151,7 +146,11 @@
         (except [ValueError]))
 
         (if (not running)
-          (do (debug (% "dep %s not running. waiting..." name))
+          (do (if (is depwait false)
+                (do (debug (.format "Not waiting on dependency {}, failing." name))
+                    (raise (ValueError (.format "Non-running dependency {}" name)))))
+
+              (debug (% "dep %s not running. waiting..." name))
               (ap-events
                 (if (= (.get it "status") "start")
                   (do (setv container (go (.show (get it "container"))))
@@ -170,11 +169,12 @@
                           (break))))))))) x) [x dependencies]))))
 
 
-(defn/coroutine wheatley-launch [docker name dependencies create-config run-config]
+(defn/coroutine wheatley-launch [docker name dependencies create-config
+                                 run-config &optional depwait]
   "Launch a container with raw options"
-  (setv debug (partial wheatley-debug name "launcher"))
 
-  (go (wheatley-depwait docker name dependencies))
+  (setv debug (partial wheatley-debug name "launcher"))
+  (go (wheatley-depwait docker name dependencies depwait))
   (debug "depwait complete.")
   (setv container (go (.create-or-replace docker.containers name create-config)))
   (go (.start container run-config))
@@ -182,16 +182,21 @@
   (raise (StopIteration container)))
 
 
-(defn/coroutine wheatley-simple-launch [docker config]
+(defn/coroutine wheatley-simple-launch [docker config &optional depwait]
   "Launch a container with keyvector options"
   (setv dmap (group-map keyword? config))
   (setv name (one nil (:name dmap)))
-  (if (is name nil) (raise (TypeError "No name supplied.")))
+  (setv requires (:requires dmap))
+
+  (if (is name nil)
+      (raise (TypeError "No name supplied.")))
+
   (setv instance
     (go (wheatley-launch
           docker
           name
           (:requires dmap)
           (wheatley-create-container-config config)
-          (wheatley-create-run-config config))))
+          (wheatley-create-run-config config)
+          depwait)))
   (raise (StopIteration instance)))
